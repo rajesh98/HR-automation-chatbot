@@ -42,14 +42,14 @@ examples = [
         "query": "SELECT * from employees e where e.employee_id = (SELECT manager_employee_id from employees where employee_id = 2)"
     },
     {   "input": "My Employee id is 2. Apply a sick leave for me on 11 July,2025.",
-        "query": "INSERT INTO leave_transactions (employee_id, leave_date, leave_type) VALUES (2, '2025-06-11', 'Sick Leave');"
+        "query": "INSERT INTO leave_transactions (employee_id, leave_date, leave_type) VALUES (2, '2025-06-11', 'sick');"
     },
     {   "input": "My Employee id is 2. Apply a Gneral leave for me on 11 July,2025.",
-        "query": "INSERT INTO leave_transactions (employee_id, leave_date, leave_type) VALUES (2, '2025-06-11', 'General Leave');"
+        "query": "INSERT INTO leave_transactions (employee_id, leave_date, leave_type) VALUES (2, '2025-06-11', 'general');"
     },
     {
        "input": "My Employee id is 2. Apply a Casual leave for me on 11 July,2025.",
-        "query": "INSERT INTO leave_transactions (employee_id, leave_date, leave_type) VALUES (2, '2025-06-11', 'Casual Leave');"
+        "query": "INSERT INTO leave_transactions (employee_id, leave_date, leave_type) VALUES (2, '2025-06-11', 'casual');"
     },
     {
        "input": "My Employee id is 2. Apply a leave for me on 11 July,2025.",
@@ -66,6 +66,18 @@ examples = [
     {
        "input": "My Employee id is 2. what is my leave balance",
         "query": "SELECT 30 - count(*) from leave_transactions where employee_id = 2 ;"
+    },
+    {
+       "input": "My Employee id is 2. How many more general leaves available for me",
+        "query": "SELECT (SELECT max_count  from  max_leave_quota where leave_type = 'general') - (SELECT count(*) from leave_transactions where employee_id = 2 and leave_type = 'general');"
+    },
+    {
+       "input": "My Employee id is 2. How many more sick leaves can I take",
+        "query": "SELECT (SELECT max_count  from  max_leave_quota where leave_type = 'sick') - (SELECT count(*) from leave_transactions where employee_id = 2 and leave_type = 'sick') ;"
+    },
+    {
+       "input": "My Employee id is 2. what is my vaccation leave balance",
+        "query": "SELECT (SELECT max_count  from  max_leave_quota where leave_type = 'vaccation') - (SELECT count(*) from leave_transactions where employee_id = 2 and leave_type = 'vaccation') ;"
     },
 ]
 

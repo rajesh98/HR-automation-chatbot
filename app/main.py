@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 import os
+#from models import models
+#from database import engine
+
 
 from fastapi.middleware.cors import CORSMiddleware
 #from .config import settings
@@ -25,6 +28,7 @@ from langchain_utils import invoke_chain
 from dotenv import load_dotenv
 import streamlit as st
 ###from typing import Dict, Any
+from pydantic import BaseModel
 
 ###from openai import OpenAI
 
@@ -37,7 +41,7 @@ import streamlit as st
 
 
 #from .router import user,auth, question,quiz,slot,event,result,category,quiztype,room,participant, stateManagement, currentStatus, resend_mail, websocket_api, sdp, clear_db
-
+#from router import leaves
 
 #models.Base.metadata.create_all(bind=engine)
 
@@ -47,12 +51,12 @@ import streamlit as st
 
 #Join interactive live quizzes on Quizzit.in for real-time audio-video engagement. Compete, connect, and learn with participants worldwide. Explore diverse topics, flexible scheduling, and win prizes. Elevate your quizzing experience today at www.quizzit.in!"""
 
-# app = FastAPI(
-#     title="Quizzit",
-#     #description=description,
-#     #summary=summary,
-#     version="0.0.1",
-# ) """
+app = FastAPI(
+    title="HR-Automate-Chatbot",
+    #description=description,
+    #summary=summary,
+    version="0.0.1",
+) 
 
 # """ db = get_db()
 # print(db.get_usable_table_names())
@@ -63,6 +67,24 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2")
 # LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY") """
 
+
+
+
+
+
+# app.add_middleware( 
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["GET", "POST", "HEAD", "OPTIONS", "PUT","DELETE"],
+#     allow_headers=["Access-Control-Allow-Headers", 'Content-Type', 'Authorization','Access-Control-Allow-Origin'],
+# )
+
+# app.include_router(leaves.router)
+
+# @app.get('/')
+# def root():
+#     return {"message": "Welcome To Quizzit"}
 
 
 
@@ -113,7 +135,17 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # SQL Result: {result}
 # Answer: """
 # )
+class QueryInput(BaseModel):
+    question: str
 
+@app.get('/')
+def root():
+    return {"message": "Welcome To HR Chatbot"}
+
+@app.post("/chat", )
+def chat(query_input: QueryInput):
+    llm_response = invoke_chain(query_input.question, "")
+    return llm_response
 
 
 def login_function(username: str, password: str) -> bool:
@@ -296,7 +328,6 @@ def main():
     else:
         #chat_interface()
         login_screen()
-        #login_screen()
 
 if __name__ == "__main__":
     main()
@@ -351,4 +382,4 @@ if __name__ == "__main__":
 
 
 
-    
+

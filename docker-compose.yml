@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8001:8001"
+    #environment:
+    #  DB_NAME: "compose_db"
+    #  API_KEY: "compose_api_key"
+    # If you want to load environment variables from a .env file (see below)
+    env_file:
+      ./.env
+
+  # Example of adding a database service (PostgreSQL)
+  # db:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_DB: compose_db
+  #     POSTGRES_USER: user
+  #     POSTGRES_PASSWORD: password
+  #   volumes:
+  #     - db_data:/var/lib/postgresql/data/
+
+# volumes:
+#   db_data:
