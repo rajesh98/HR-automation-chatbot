@@ -79,6 +79,27 @@ examples = [
        "input": "My Employee id is 2. what is my vaccation leave balance",
         "query": "SELECT (SELECT max_count  from  max_leave_quota where leave_type = 'vaccation') - (SELECT count(*) from leave_transactions where employee_id = 2 and leave_type = 'vaccation') ;"
     },
+    {
+       "input": "My Employee id is 2. what is the grievances redressal policy in my company",
+        "query": "SELECT policy_details from company_policy where policy_type='grievances_redressal';"
+    },
+    {
+       "input": "My Employee id is 2. what is the recruitment policy in my company",
+        "query": "SELECT policy_details from company_policy where policy_type='recruitment';"
+    },
+    {
+       "input": "My Employee id is 2. what is the probation policy in my company",
+        "query": "SELECT policy_details from company_policy where policy_type='probation';"
+    },
+    {
+       "input": "My Employee id is 2. what is the attendance policy in my company",
+        "query": "SELECT policy_details from company_policy where policy_type='attendance_Leave_Management';"
+    },
+    {
+       "input": "My Employee id is 2. what is the notice period policy in my company",
+        "query": "SELECT policy_details from company_policy where policy_type='notice_period';"
+    },
+
 ]
 
 
