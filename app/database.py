@@ -8,12 +8,18 @@ import os
 from dotenv import load_dotenv
 import urllib.parse
 
+from sqlalchemy import URL
+
+
+
 # Load environment variables from .env file
 load_dotenv()
 db_user = os.getenv("db_user")
 db_password = os.getenv("db_password")
 db_host = os.getenv("db_host")
 db_name = os.getenv("db_name")
+#DB_PORT = os.getenv("DB_PORT")
+db_port = 5102
 #print(db_password)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -23,10 +29,19 @@ LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
 #db = SQLDatabase.from_uri(f"mysql+pymysql://{db_user}:{db_password}@{db_host}/{db_name}")
 import urllib.parse
 
+url_object = URL.create(
+    "postgresql+psycopg2",
+    username=db_user,
+    password=db_password,  # plain (unescaped) text
+    host=db_host,
+    database=db_name,
+    port=5102, # Optional: specify port if needed
+    # query={"key": "value"} # Optional: for driver-specific parameters
+)
 
 
-SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg2://{db_user}:{urllib.parse.quote_plus(db_password)}@{db_host}/{db_name}"
-db = SQLDatabase.from_uri(SQLALCHEMY_DATABASE_URL)
+SQLALCHEMY_DATABASE_URL = f"postgresql+psycopg2://{db_user}:{urllib.parse.quote_plus(db_password)}@{db_host}:{db_port}/{db_name}?charset=utf8mb4"
+db = SQLDatabase.from_uri(url_object)
 #engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_size=30, max_overflow=20)
 #SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -7,8 +7,81 @@ from database import get_db
 
 # db = get_db()
 # table_info = db.get_usable_table_names()
-
+# 
 examples = [
+{
+"input": "List first 100 Devices",
+"query": 'SELECT * FROM "Device" ORDER BY id ASC LIMIT 100'
+},
+{
+"input": "How many Devices are there available?",
+"query": 'SELECT COUNT(*) FROM "Device"'
+},
+{
+"input": "How many Devices active/down?",
+"query": '''
+    SELECT
+    COUNT(CASE WHEN last_report >= (SELECT MAX(timestamp) FROM "DeviceHealth") - INTERVAL '1 hour' THEN 1 END) AS active_count,
+    COUNT(CASE WHEN last_report < (SELECT MAX(timestamp) FROM "DeviceHealth") - INTERVAL '1 hour' OR last_report IS NULL THEN 1 END) AS down_count
+    FROM (
+    SELECT d."deviceId", MAX(dh.timestamp) AS last_report
+    FROM "Device" d
+    LEFT JOIN "DeviceHealth" dh ON d."deviceId" = dh."deviceId"
+    GROUP BY d."deviceId"
+    ) status;
+        '''
+},
+{
+"input": "details of down devices",
+"query": '''
+        SELECT d."deviceId", d.model, d.manufacturer, COALESCE(to_char(max_ts.last_seen, 'YYYY-MM-DD HH24:MI:SS'), 'Never Reported') as last_seen
+        FROM "Device" d
+        LEFT JOIN (
+        SELECT "deviceId", MAX(timestamp) as last_seen
+        FROM "DeviceHealth"
+        GROUP BY "deviceId"
+        ) max_ts ON d."deviceId" = max_ts."deviceId"
+        WHERE max_ts.last_seen IS NULL
+        OR max_ts.last_seen < (SELECT MAX(timestamp) FROM "DeviceHealth") - INTERVAL '1 hour';
+'''
+},
+{
+"input": "Show Details of Devices Health?",
+"query": '''
+        SELECT d.model, d.manufacturer, dh.*
+        FROM "DeviceHealth" dh
+        JOIN "Device" d ON dh."deviceId" = d."deviceId"
+        ORDER BY dh.timestamp DESC;
+
+'''
+},
+{
+"input": "Show Details of Devices Connectivity measurement?",
+"query": '''
+        SELECT d.model, d.manufacturer, dc.*
+        FROM "DeviceDataConnectivity" dc
+        JOIN "Device" d ON dc."deviceId" = d."deviceId"
+        ORDER BY dc.timestamp DESC;
+'''
+},
+{
+"input": "What are the devices having issue?",
+"query": '''
+        SELECT DISTINCT d."deviceId", d.model, d.manufacturer
+        FROM "Device" d
+        LEFT JOIN "DeviceHealth" dh ON d."deviceId" = dh."deviceId"
+        LEFT JOIN "DeviceDataConnectivity" dc ON d."deviceId" = dc."deviceId"
+        LEFT JOIN "DeviceNetworkSignal" ds ON d."deviceId" = ds."deviceId"
+        WHERE dh."cpuUsagePercent" > 85
+        OR dh."batteryTempCelsius" > 45
+        OR dh."batteryPercent" < 15
+        OR (ds."rsrpDbm" < -110 AND CAST(TRIM(TRAILING '%' FROM dc.loss) AS DOUBLE PRECISION) > 5)
+        OR CAST(TRIM(TRAILING 'ms' FROM dc."avgDelay") AS DOUBLE PRECISION) > 200;
+'''
+}
+]
+
+""" examples = [
     {
         "input": "List all Employess",
         "query": "SELECT * FROM employees;"
@@ -100,7 +173,7 @@ examples = [
         "query": "SELECT policy_details from company_policy where policy_type='notice_period';"
     },
 
-]
+] """
 
 
 example_prompt = ChatPromptTemplate.from_messages(
@@ -116,11 +189,11 @@ few_shot_prompt = FewShotChatMessagePromptTemplate(
     input_variables=["input","top_k"],
 )
 print("-----------after eg selector---------------")
-print(few_shot_prompt.format(input="Get the all leave details of 'Sandeep'."))
+#---------------print(few_shot_prompt.format(input="Get the all leave details of 'Sandeep'."))
 
 final_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are a MySQL expert. Given an input question, create a syntactically correct Postgres SQL query to run, do not include any markdown syntax (```sql).Only give the SQL so that it is directly executed in the DataBase.Unless otherwise specificed.\n\nHere is the relevant table info: {table_info}\n\nBelow are a number of examples of questions and their corresponding SQL queries."),
+        ("system", "You are a postgres sql expert. Given an input question, create a syntactically correct Postgres SQL query to run, do not include any markdown syntax (```sql).Only give the SQL so that it is directly executed in the DataBase.Unless otherwise specificed.\n\nHere is the relevant table info: {table_info}\n\nBelow are a number of examples of questions and their corresponding SQL queries."),
         few_shot_prompt,
         #MessagesPlaceholder(variable_name="messages"),
         ("human", "{input}"),
