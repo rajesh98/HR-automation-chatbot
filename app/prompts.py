@@ -1,5 +1,5 @@
 
-from examples import get_example_selector
+#from examples import get_example_selector
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder,FewShotChatMessagePromptTemplate,PromptTemplate
 from database import get_db
 
@@ -18,67 +18,70 @@ examples = [
 "query": 'SELECT COUNT(*) FROM "Device"'
 },
 {
-"input": "How many Devices active/down?",
+"input": "How many Devices are Active/excellent or modearte  or inactive/down?",
 "query": '''
-    SELECT
-    COUNT(CASE WHEN last_report >= (SELECT MAX(timestamp) FROM "DeviceHealth") - INTERVAL '1 hour' THEN 1 END) AS active_count,
-    COUNT(CASE WHEN last_report < (SELECT MAX(timestamp) FROM "DeviceHealth") - INTERVAL '1 hour' OR last_report IS NULL THEN 1 END) AS down_count
-    FROM (
-    SELECT d."deviceId", MAX(dh.timestamp) AS last_report
-    FROM "Device" d
-    LEFT JOIN "DeviceHealth" dh ON d."deviceId" = dh."deviceId"
-    GROUP BY d."deviceId"
-    ) status;
+            SELECT status, COUNT(*) as count
+            FROM (
+            SELECT DISTINCT ON (d."deviceId")
+            CASE
+            WHEN dh.timestamp < NOW() - INTERVAL '1 hour' OR dh.timestamp IS NULL THEN 'Inactive/Down'
+            WHEN ds."rsrpDbm" >= -90
+            AND CAST(TRIM(TRAILING '%' FROM COALESCE(dc.loss, '0%')) AS DOUBLE PRECISION) <= 1
+            AND dh."cpuUsagePercent" < 50 THEN 'Excellent'
+            ELSE 'Moderate Issues'
+            END as status
+            FROM "Device" d
+            LEFT JOIN "DeviceHealth" dh ON d."deviceId" = dh."deviceId"
+            LEFT JOIN "DeviceNetworkSignal" ds ON d."deviceId" = ds."deviceId" AND ds.timestamp = dh.timestamp
+            LEFT JOIN "DeviceDataConnectivity" dc ON d."deviceId" = dc."deviceId" AND dc.timestamp = dh.timestamp
+            ORDER BY d."deviceId", dh.timestamp DESC
+            ) sub
+            GROUP BY status;
         '''
 },
 {
-"input": "details of down devices",
-"query": '''
-        SELECT d."deviceId", d.model, d.manufacturer, COALESCE(to_char(max_ts.last_seen, 'YYYY-MM-DD HH24:MI:SS'), 'Never Reported') as last_seen
-        FROM "Device" d
-        LEFT JOIN (
-        SELECT "deviceId", MAX(timestamp) as last_seen
-        FROM "DeviceHealth"
-        GROUP BY "deviceId"
-        ) max_ts ON d."deviceId" = max_ts."deviceId"
-        WHERE max_ts.last_seen IS NULL
-        OR max_ts.last_seen < (SELECT MAX(timestamp) FROM "DeviceHealth") - INTERVAL '1 hour';
-'''
-},
-{
-"input": "Show Details of Devices Health?",
-"query": '''
-        SELECT d.model, d.manufacturer, dh.*
-        FROM "DeviceHealth" dh
-        JOIN "Device" d ON dh."deviceId" = d."deviceId"
-        ORDER BY dh.timestamp DESC;
-
-'''
-},
-{
-"input": "Show Details of Devices Connectivity measurement?",
-"query": '''
-        SELECT d.model, d.manufacturer, dc.*
-        FROM "DeviceDataConnectivity" dc
-        JOIN "Device" d ON dc."deviceId" = d."deviceId"
-        ORDER BY dc.timestamp DESC;
-'''
-},
-{
-"input": "What are the devices having issue?",
-"query": '''
-        SELECT DISTINCT d."deviceId", d.model, d.manufacturer
-        FROM "Device" d
-        LEFT JOIN "DeviceHealth" dh ON d."deviceId" = dh."deviceId"
-        LEFT JOIN "DeviceDataConnectivity" dc ON d."deviceId" = dc."deviceId"
-        LEFT JOIN "DeviceNetworkSignal" ds ON d."deviceId" = ds."deviceId"
-        WHERE dh."cpuUsagePercent" > 85
-        OR dh."batteryTempCelsius" > 45
-        OR dh."batteryPercent" < 15
-        OR (ds."rsrpDbm" < -110 AND CAST(TRIM(TRAILING '%' FROM dc.loss) AS DOUBLE PRECISION) > 5)
-        OR CAST(TRIM(TRAILING 'ms' FROM dc."avgDelay") AS DOUBLE PRECISION) > 200;
+    "input": "Details of Active/excellent or modearte  or inactive/down device with Reson?",
+    "query":'''
+            WITH LatestMetrics AS (
+    SELECT DISTINCT ON (d."deviceId")
+        d."deviceId",
+        d.model,
+        ds."rsrpDbm",
+        CAST(TRIM(TRAILING '%' FROM dc.loss) AS DOUBLE PRECISION) as loss_pct,
+        CAST(TRIM(TRAILING 'ms' FROM dc."avgDelay") AS DOUBLE PRECISION) as avg_delay_ms,
+        dh."cpuUsagePercent",
+        dh."batteryTempCelsius",
+        dh.timestamp as last_seen
+    FROM "Device" d
+    LEFT JOIN "DeviceNetworkSignal" ds ON d."deviceId" = ds."deviceId"
+    LEFT JOIN "DeviceDataConnectivity" dc ON d."deviceId" = dc."deviceId"
+    LEFT JOIN "DeviceHealth" dh ON d."deviceId" = dh."deviceId"
+    ORDER BY d."deviceId", dh.timestamp DESC, dc.timestamp DESC, ds.timestamp DESC
+)
+SELECT 
+    "deviceId",
+    model,
+    CASE 
+        WHEN last_seen < NOW() - INTERVAL '1 hour' OR last_seen IS NULL THEN 'Inactive/Down'
+        WHEN "rsrpDbm" >= -90 AND loss_pct <= 1 AND avg_delay_ms < 50 AND "cpuUsagePercent" < 50 THEN 'Excellent'
+        ELSE 'Moderate Issues'
+    END as status,
+    CASE 
+        WHEN last_seen < NOW() - INTERVAL '1 hour' OR last_seen IS NULL THEN 'Device has not reported data in over 60 minutes.'
+        WHEN "rsrpDbm" >= -90 AND loss_pct <= 1 AND avg_delay_ms < 50 AND "cpuUsagePercent" < 50 THEN 'Strong signal, zero packet loss, and low resource utilization.'
+        ELSE 
+            CONCAT(
+                CASE WHEN "rsrpDbm" < -105 THEN 'Weak Signal; ' ELSE '' END,
+                CASE WHEN loss_pct > 2 THEN 'Packet Loss detected; ' ELSE '' END,
+                CASE WHEN avg_delay_ms > 150 THEN 'High Latency; ' ELSE '' END,
+                CASE WHEN "cpuUsagePercent" > 80 THEN 'High CPU Strain; ' ELSE '' END,
+                CASE WHEN "batteryTempCelsius" > 40 THEN 'Thermal Throttling risk; ' ELSE '' END
+            )
+    END as reason
+FROM LatestMetrics;
 '''
 }
+
 ]
 
 """ examples = [
