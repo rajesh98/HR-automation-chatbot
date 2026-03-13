@@ -34,7 +34,7 @@ from pydantic import BaseModel
 #**************************************************************
 import uuid
 from datetime import datetime
-import pandas as pd
+#import pandas as pd
 
 st.set_page_config(page_title="Theta-X Assistant", layout="wide")
 
