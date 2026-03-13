@@ -1,26 +1,21 @@
 version: '3.8'
 
 services:
-  web:
+  theta-x-assistant:
     build: .
+    container_name: theta_x_app
     ports:
-      - "8051:8051"
-    #environment:
-    #  DB_NAME: "compose_db"
-    #  API_KEY: "compose_api_key"
-    # If you want to load environment variables from a .env file (see below)
+      - "8501:8501"
     env_file:
-      ./.env
+      - .env
+    environment:
+      - STREAMLIT_SERVER_HEADLESS=true
+      - STREAMLIT_THEME_BASE=dark  # Forces dark mode to match your screenshot
+    volumes:
+      - .:/app
+    restart: always
 
-  # Example of adding a database service (PostgreSQL)
-  # db:
-  #   image: postgres:13
-  #   environment:
-  #     POSTGRES_DB: compose_db
-  #     POSTGRES_USER: user
-  #     POSTGRES_PASSWORD: password
-  #   volumes:
-  #     - db_data:/var/lib/postgresql/data/
-
-# volumes:
-#   db_data:
+# Optional: define a network if you plan to connect to a database container later
+networks:
+  default:
+    name: theta-x-network

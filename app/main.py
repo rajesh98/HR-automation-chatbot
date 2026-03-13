@@ -262,6 +262,28 @@ def chat_interface_old():
 
 #
 
+st.markdown(
+    """
+<style>
+.stDeployButton {
+    display: none;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+
+st.markdown(
+    """
+<style>
+.stAppDeployButton {
+    display: none;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
 
 
