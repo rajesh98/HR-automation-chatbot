@@ -18,7 +18,7 @@ examples = [
 "query": 'SELECT COUNT(*) FROM "Device"'
 },
 {
-"input": "How many Devices are Active/excellent or modearte  or inactive/down?",
+"input": "How many Devices are Active/excellent or modearte  or inactive/down/deactive?",
 "query": '''
             SELECT status, COUNT(*) as count
             FROM (
@@ -196,7 +196,7 @@ print("-----------after eg selector---------------")
 
 final_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", "You are a postgres sql expert. Given an input question, create a syntactically correct Postgres SQL query to run, do not include any markdown syntax (```sql).Only give the SQL so that it is directly executed in the DataBase.Unless otherwise specificed.\n\nHere is the relevant table info: {table_info}\n\nBelow are a number of examples of questions and their corresponding SQL queries."),
+        ("system", "You are a postgres sql expert. Given an input question, create a syntactically correct Postgres SQL query to run, do not include any markdown syntax (```sql).Only give the SQL so that it is directly executed in the DataBase.Unless otherwise specificed.\n\nHere is the relevant table info: {table_info}\n\nBelow are a number of examples of questions and their corresponding SQL queries.Use these examples strictly"),
         few_shot_prompt,
         #MessagesPlaceholder(variable_name="messages"),
         ("human", "{input}"),

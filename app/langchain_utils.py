@@ -65,8 +65,11 @@ def get_chain():
     print(db.table_info)
     #llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
+
+
+    ###----gemini-3.1-flash-lite-preview
     llm = ChatGoogleGenerativeAI(
-    model="gemini-3.1-pro-preview",
+    model="gemini-3.1-flash-lite-preview",
     temperature=0,  # Gemini 3.0+ defaults to 1.0
     # max_tokens=None,
     # timeout=None,
